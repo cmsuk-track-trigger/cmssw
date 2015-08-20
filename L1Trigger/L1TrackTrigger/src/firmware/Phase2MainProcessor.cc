@@ -25,12 +25,11 @@ l1t::Phase2MainProcessorFirmware::~Phase2MainProcessorFirmware()
 
 };
 
-//need to switch to BXVector
 void l1t::Phase2MainProcessorFirmware::processEvent(
-const std::vector<l1t::Stub> & stubs,
-std::vector<l1t::Stub> & outstubs
+const std::vector<l1t::Stub> & inStubs,
+std::vector<l1t::Stub> & outStubs
 ) { 
-  m_trackTrigger->processEvent(stubs, outstubs);
+  m_trackTrigger->processEvent(inStubs, outStubs);
 }
 
 

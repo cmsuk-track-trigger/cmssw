@@ -18,7 +18,7 @@ namespace l1t {
   class Phase2TrackTrigger { 
   public:
     virtual void processEvent(const std::vector<l1t::Stub> & stubs, 
-    std::vector<l1t::Stub> outstubs) = 0;    
+    std::vector<l1t::Stub> & outstubs) = 0;    
 
     virtual ~Phase2TrackTrigger(){};
   }; 

@@ -15,7 +15,6 @@
 
 #include "CondFormats/L1TObjects/interface/TrackTriggerParams.h"
 
-
 namespace l1t {
 
   // first iteration
@@ -26,8 +25,8 @@ namespace l1t {
     virtual ~Phase2MainProcessorFirmware();
 
     virtual void processEvent(
-    const std::vector<l1t::Stub> & stubs,
-    std::vector<l1t::Stub> & outstubs
+    const std::vector<l1t::Stub> & inStubs,
+    std::vector<l1t::Stub> & outStubs
 );
 
     void print(std::ostream&) const;

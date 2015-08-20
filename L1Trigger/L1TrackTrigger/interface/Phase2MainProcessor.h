@@ -19,8 +19,8 @@ namespace l1t {
   class Phase2MainProcessor { 
   public:
     virtual void processEvent(
-    const std::vector<l1t::Stub> & stubs,
-    std::vector<l1t::Stub> & outstubs
+    const std::vector<l1t::Stub> & inStubs,
+    std::vector<l1t::Stub> & outStubs
     ) = 0;    
 
     virtual ~Phase2MainProcessor(){};

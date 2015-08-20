@@ -23,15 +23,18 @@ m_axis_av_= params_->MAxisMav;
 c_axis_min_= params_->CAxisMin;
 c_axis_max_= params_->CAxisMax;
 c_axis_av_= params_->CAxisMav;
+
 T_ = params_->T;
+//nboards_ = params_->NBoards;
 
 }
 
 l1t::Phase2TrackTriggerFirmware::~Phase2TrackTriggerFirmware() {}
 
-void l1t::Phase2TrackTriggerFirmware::processEvent(const std::vector<l1t::Stub>
- &stubs, std::vector<l1t::Stub> outstubs) 
-{     
+void l1t::Phase2TrackTriggerFirmware::processEvent(const std::vector<l1t::Stub> & stubs, 
+    std::vector<l1t::Stub> & outstubs) 
+{
+
 
 //for(unsigned int nboards; nboards<nboards_; ++nboards){
 
@@ -45,6 +48,8 @@ unsigned int m_size=m_axis_min_.size();
 unsigned int c_size=c_axis_min_.size();
 std::cout << "m size = " << m_size << std::endl;
 std::cout << "c size = " << c_size << std::endl;
+
+if ( m_size % 2==! 0 ){std::cout << "ERROR - please choose EVEN number of bins in the c-axis" << std::endl;}
 
 /*///initialise array///*/
 //x vector first, then y vector second
@@ -67,11 +72,29 @@ hough_array.at(x).at(y).setm_coord(x);
 hough_array.at(x).at(y).setc_coord(y);
 }
 }
-   
+int nchan_upper_west(6), nchan_lower_west(6), nchan_north(6), nchan_south(6);
+
+/*///initialise input controllers//*/
+std::vector<std::vector<std::vector<int>>> upper_west_input_controller(int(c_size/2)+1, 
+std::vector<std::vector<int>>(nchan_upper_west,std::vector<int>(16)));
+
+std::vector<std::vector<std::vector<int>>> lower_west_input_controllerint(int(c_size/2), 
+std::vector<std::vector<int>>(nchan_lower_west,std::vector<int>(16)));
+
+std::vector<std::vector<std::vector<int>>> north_input_controller(m_size, 
+std::vector<std::vector<int>>(nchan_north,std::vector<int>(16)));
+
+std::vector<std::vector<std::vector<int>>> south_input_controller(m_size, 
+std::vector<std::vector<int>>(nchan_south,std::vector<int>(16)));
+
+
+
 /***initialise stub iterator****/
 std::vector<l1t::Stub>::const_iterator stub;
-
 for (stub=stubs.begin(); stub!=stubs.end(); stub++){
+
+
+
 
 /*****************************/
 /*Now begin input to array*/
@@ -95,8 +118,8 @@ hough_array.at(0).at(y).fifo_entry.push_back(*stub);
 if (stub->S() <48){
 for (unsigned int x=0; x< m_size; ++x){
 //int inv_r(stub->rT());
-int m_stub = (stub->phiS() - hough_array.at(0).back().cmax())
-/(stub->rT()); //need to fix to make like lut
+int m_stub = (stub->phiS() - 2*hough_array.at(0).back().cmax())*r_inv((stub->rT())); 
+//need to fix to make like lut
 if(m_stub < hough_array.at(x).at(0).mmax() && m_stub > hough_array.at(x).at(0).mmin()){
 hough_array.at(0).at(c_size).fifo_entry.push_back(*stub);
 }
@@ -107,10 +130,10 @@ hough_array.at(0).at(c_size).fifo_entry.push_back(*stub);
 if (stub->S() <48){
 for (unsigned int x=0; x< m_size; ++x){
 //int inv_r(stub->rT());
-int m_stub = (stub->phiS() - hough_array.at(0).front().cmax())
-/(stub->rT()); //need to fix to make like lut
-if(m_stub < hough_array.at(x).at(0).mmax() && 
-m_stub > hough_array.at(x).at(0).mmin()){
+int m_stub_4K = (stub->phiS() - 2*hough_array.at(0).front().cmax())*r_inv((stub->rT())); 
+//need to fix to make like lut
+if(m_stub_4K < 4*1024*hough_array.at(x).at(0).mmax() && 
+m_stub_4K > 4*1024*hough_array.at(x).at(0).mmin()){
 hough_array.at(0).at(0).fifo_entry.push_back(*stub);
 }
 }
@@ -169,9 +192,11 @@ fifosize.end())))
 {
 case 0:
 if(hough_array[x][y].fifo_nwest.size() > 0){
-if (ifstore(hough_array[x][y], hough_array[x][y].fifo_nwest[0])){
+if (nw_cell_entry(hough_array[x][y], hough_array[x][y].fifo_nwest[0])){
 if(bend_filter(hough_array[x][y], hough_array[x][y].fifo_nwest[0], T_)){
-hough_array[x][y].ram_stubs.push_back(hough_array[x][y].fifo_nwest[0]);}
+//hough_array[x][y].bram.at(event_tick).at(hough_array[x][y].fifo_nwest[0].S()).push_back(
+//hough_array[x][y].fifo_nwest[0]);}
+
 hough_array[x+1][y].fifo_west.push_back(hough_array[x][y].ram_stubs.back());
 if(y!=0){
 hough_array[x+1][y-1].fifo_nwest.push_back(hough_array[x][y].ram_stubs.back());}
@@ -186,7 +211,7 @@ readout_cell(hough_array[x][y], x, y, outstubs);
 break;}
 
 if(hough_array[x][y].fifo_west.size() > 0){
-if (ifstore(hough_array[x][y], hough_array[x][y].fifo_west[0])){
+if (w_cell_entry(hough_array[x][y], hough_array[x][y].fifo_west[0])){
 if(bend_filter(hough_array[x][y], hough_array[x][y].fifo_west[0], T_)){
 hough_array[x][y].ram_stubs.push_back(hough_array[x][y].fifo_west[0]);}
 if((y+1)!=c_size){
@@ -201,7 +226,7 @@ break;
 
 case 2:
 if(hough_array[x][y].fifo_swest.size() > 0){
-if (ifstore(hough_array[x][y], hough_array[x][y].fifo_swest[0])){
+if (sw_cell_entry(hough_array[x][y], hough_array[x][y].fifo_swest[0])){
 if(bend_filter(hough_array[x][y], hough_array[x][y].fifo_swest[0], T_)){
 hough_array[x][y].ram_stubs.push_back(hough_array[x][y].fifo_swest[0]);}
 hough_array[x+1][y].fifo_west.push_back(hough_array[x][y].ram_stubs.back());
@@ -218,6 +243,7 @@ std::cout << "ERROR FINDING FULLEST FIFO" << std::endl;
 
 fifosize.clear();
 
+}
 }
 }
 }
